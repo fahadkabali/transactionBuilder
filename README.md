@@ -1,10 +1,8 @@
 # Bitcoin Script Builder
 A simple Node.js script for Bitcoin script construction, address derivation, and transaction building.
-## Table of Contents
+
 ## Overview
-
 This project provides a set of Node.js functions to perform various Bitcoin-related tasks, including:
-
 1. Generating a redeem script in hex format.
 2. Deriving a Bitcoin address from a redeem script.
 3. Constructing a transaction that sends Bitcoins to a specified address.
