@@ -62,10 +62,6 @@ async function constructTransaction(outputAddress, privateKeyHex, utxoTxid, utxo
     }
 }
 
-// const privateKeyHex = 'aTGB3KFubTka7SddepSF5igai8sc5NsktnM8NJxi8fwztxAE034g'
-// const utxoTxid = 'bd9feb24cae28466bfb88016d45a96fd92432ee00a44bd8a6668a8758d5d1389'
-
-
 const privateKeyHex = 'cQGMx2kk5jAppb1igyUv4SDUvDaWP9xZU47K4mmwTg1R9oMjNtTz';
 const utxoTxid = '81018435efa1942bd6b03be999b709d817c42add8fc14ca504811872ee4db9db';
 const utxoHex = '02000000000101caee8b5ac5a58094b70745fb497cf52a5b686cfc21940394836665479626e6910100000000fdffffff02f47a0100000000001976a914d798d42b6ec6818157a8ee46f935affb58a6c08a88ac697a7be2000000001976a91413772d67780951b0952d3490b52e0714564cae8f88ac02473044022063546d345e2a33cf0566085a99a023df9a897d9a9269975b4d55412d65563b8b02205d744feb0bf719e183b688353ad41cf7167f6865f76a0d05a34e5f4a293b7062012102d193603650a187c820d312110c90215af39c64385e71bf62d3d13b72ee3f4f8112582700';
@@ -80,60 +76,60 @@ constructTransaction(outputAddress, privateKeyHex, utxoTxid, utxoHex)
 
     
     
-// async function constructSpendingTransaction(outputAddress, amountToSend, privateKeyHex, utxoTxid, utxoOutputIndex, utxoAmount) {
-//     try {
-//         const network = bitcoin.networks.testnet;
+async function constructSpendingTransaction(outputAddress, amountToSend, privateKeyHex, utxoTxid, utxoOutputIndex, utxoAmount) {
+    try {
+        const network = bitcoin.networks.testnet;
 
-//         // Create a new PSBT instance
-//         const psbt = new Psbt({ network });
+        // Create a new PSBT instance
+        const psbt = new Psbt({ network });
 
-//         // Add the input from the previous transaction
-//         psbt.addInput({
-//             hash: utxoTxid,
-//             index: utxoOutputIndex,
-//             witnessUtxo: {
-//                 script: Buffer.from(previousRedeemScriptHex, 'hex'),
-//                 value: utxoAmount,
-//             },
-//             redeemScript: Buffer.from(previousRedeemScriptHex, 'hex')
-//         });
+        // Add the input from the previous transaction
+        psbt.addInput({
+            hash: utxoTxid,
+            index: utxoOutputIndex,
+            witnessUtxo: {
+                script: Buffer.from(previousRedeemScriptHex, 'hex'),
+                value: utxoAmount,
+            },
+            redeemScript: Buffer.from(previousRedeemScriptHex, 'hex')
+        });
 
-//         // Add the new output
-//         psbt.addOutput({
-//             address: outputAddress,
-//             value: amountToSend,
-//         });
+        // Add the new output
+        psbt.addOutput({
+            address: outputAddress,
+            value: amountToSend,
+        });
 
-//         // Sign the input with the private key
-//         const privateKey = bitcoin.ECPair.fromPrivateKey(Buffer.from(privateKeyHex, 'hex'));
-//         psbt.signInput(0, privateKey);
+        // Sign the input with the private key
+        const privateKey = bitcoin.ECPair.fromPrivateKey(Buffer.from(privateKeyHex, 'hex'));
+        psbt.signInput(0, privateKey);
 
-//         // Finalize the PSBT
-//         psbt.finalizeAllInputs();
+        // Finalize the PSBT
+        psbt.finalizeAllInputs();
 
-//         // Extract the finalized transaction hex
-//         const transactionHex = psbt.extractTransaction().toHex();
+        // Extract the finalized transaction hex
+        const transactionHex = psbt.extractTransaction().toHex();
 
-//         return transactionHex;
-//     } catch (error) {
-//         console.error('Error constructing new transaction:', error)
-//         throw error
-//     }
-// }
+        return transactionHex;
+    } catch (error) {
+        console.error('Error constructing new transaction:', error)
+        throw error
+    }
+}
 
-// constructSpendingTransaction(newOutputAddress, newOutputAmount, privateKeyHex, utxoTxid, utxoOutputIndex, utxoAmount)
-//     .then((transactionHex) => {
-//         console.log('Constructed New Transaction Hex:', transactionHex)
-//         const exec = require('child_process').exec;
-//         const command = `bitcoin-cli -testnet sendrawtransaction ${transactionHex}`
-//         exec(command, (error, stdout, stderr) => {
-//             if (error) {
-//                 console.error('Error broadcasting transaction:', error)
-//                 return;
-//             }
-//             console.log('Transaction ID:', stdout.trim())
-//         });
-//     })
-//     .catch((error) => {
-//         console.error('Error constructing new transaction:', error)
-//     })
+constructSpendingTransaction(newOutputAddress, newOutputAmount, privateKeyHex, utxoTxid, utxoOutputIndex, utxoAmount)
+    .then((transactionHex) => {
+        console.log('Constructed New Transaction Hex:', transactionHex)
+        const exec = require('child_process').exec;
+        const command = `bitcoin-cli -testnet sendrawtransaction ${transactionHex}`
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error('Error broadcasting transaction:', error)
+                return;
+            }
+            console.log('Transaction ID:', stdout.trim())
+        });
+    })
+    .catch((error) => {
+        console.error('Error constructing new transaction:', error)
+    })
