@@ -3,6 +3,7 @@ const { Psbt } = require('bitcoinjs-lib')
 const ECPairFactory = require('ecpair').default
 const ecc = require('tiny-secp256k1')
 const ECPair = ECPairFactory(ecc)
+const network = bitcoin.networks.testnet
 
 
 // Generate Redeem Script
@@ -19,42 +20,40 @@ console.log('redeemScript Hex: ', redeemScript.toString('hex'));
 console.log('redeemScript ASM:', bitcoin.script.toASM(redeemScript));
 
 const redeemScriptBuffer = Buffer.from(redeemScript, 'hex')
-const p2shAddress = bitcoin.payments.p2sh({ redeem: { output: redeemScript } }).address
-console.log('P2SH Address:', p2shAddress);
+const outputAddress = bitcoin.payments.p2sh({ redeem: { output: redeemScriptBuffer} }).address
+console.log('P2SH Address:', outputAddress);
 
-async function constructTransaction(outputAddress, amountToSend, privateKeyHex, utxoTxid, utxoOutputIndex, utxoAmount) {
+async function constructTransaction(outputAddress, privateKeyHex, utxoTxid, utxoHex) {
     try {
-        const network = bitcoin.networks.testnet;
+        
+        const keyPair= ECPair.fromWIF(privateKeyHex, network)
 
         // Create a new PSBT instance
-        const psbt = new Psbt({ network });
+        const psbt = new bitcoin.Psbt({ network })
+        psbt.setVersion(2);
+        psbt.setLocktime(0);
 
         // Add the input to the PSBT
         psbt.addInput({
             hash: utxoTxid,
-            index: utxoOutputIndex,
-            witnessUtxo: {
-                script: Buffer.from('0014c819d8b265f8b4ebf1af797b0f92640b4a11c37e', 'hex'),
-                value: utxoAmount * 1e8, 
-            },
-            redeemScript: Buffer.from(redeemScriptHex, 'hex')
+            index: 0,
+            nonWitnessUtxo: Buffer.from(utxoHex, 'hex'),
         });
 
         // Add the output to the PSBT
         psbt.addOutput({
-            address: outputAddress,
-            value: Math.floor(amountToSend * 1e8), 
+            script: Buffer.from(outputAddress,'hex'),
+            value: 20000, 
         });
 
         // Sign the input
-        const privateKey = bitcoin.ECPair.fromPrivateKey(Buffer.from(privateKeyHex, 'hex'));
-        psbt.signInput(1, privateKey); 
+        psbt.signInput(0, keyPair); 
 
         // Finalize the PSBT
         psbt.finalizeAllInputs();
 
         // Extract the finalized transaction hex from the PSBT
-        const transactionHex = psbt.extractTransaction().toHex();
+        const transactionHex = psbt.extractTransaction().toHex()
 
         return transactionHex;
     } catch (error) {
@@ -63,13 +62,15 @@ async function constructTransaction(outputAddress, amountToSend, privateKeyHex, 
     }
 }
 
-const amountToSend = 0.0001
-const privateKeyHex = 'aTGB3KFubTka7SddepSF5igai8sc5NsktnM8NJxi8fwztxAE034g';
-const utxoTxid = 'bd9feb24cae28466bfb88016d45a96fd92432ee00a44bd8a6668a8758d5d1389';
-const utxoOutputIndex = 2
-const utxoAmount = 0.00183220
+// const privateKeyHex = 'aTGB3KFubTka7SddepSF5igai8sc5NsktnM8NJxi8fwztxAE034g'
+// const utxoTxid = 'bd9feb24cae28466bfb88016d45a96fd92432ee00a44bd8a6668a8758d5d1389'
 
-constructTransaction(p2shAddress, amountToSend, privateKeyHex, utxoTxid, utxoOutputIndex, utxoAmount)
+
+const privateKeyHex = 'cQGMx2kk5jAppb1igyUv4SDUvDaWP9xZU47K4mmwTg1R9oMjNtTz';
+const utxoTxid = '81018435efa1942bd6b03be999b709d817c42add8fc14ca504811872ee4db9db';
+const utxoHex = '02000000000101caee8b5ac5a58094b70745fb497cf52a5b686cfc21940394836665479626e6910100000000fdffffff02f47a0100000000001976a914d798d42b6ec6818157a8ee46f935affb58a6c08a88ac697a7be2000000001976a91413772d67780951b0952d3490b52e0714564cae8f88ac02473044022063546d345e2a33cf0566085a99a023df9a897d9a9269975b4d55412d65563b8b02205d744feb0bf719e183b688353ad41cf7167f6865f76a0d05a34e5f4a293b7062012102d193603650a187c820d312110c90215af39c64385e71bf62d3d13b72ee3f4f8112582700';
+
+constructTransaction(outputAddress, privateKeyHex, utxoTxid, utxoHex)
     .then((transactionHex) => {
         console.log('Constructed Transaction:', transactionHex);
     })
