@@ -43,7 +43,7 @@ async function constructTransaction(outputAddress, privateKeyHex, utxoTxid, utxo
         // Add the output to the PSBT
         psbt.addOutput({
             script: Buffer.from(outputAddress,'hex'),
-            value: 20000, 
+            value: 50000, 
         });
 
         // Sign the input
@@ -76,33 +76,28 @@ constructTransaction(outputAddress, privateKeyHex, utxoTxid, utxoHex)
 
     
     
-async function constructSpendingTransaction(outputAddress, amountToSend, privateKeyHex, utxoTxid, utxoOutputIndex, utxoAmount) {
+async function constructSpendingTransaction(newOutputAddress, newUtxoTxid, lockingScript, unlockingScript) {
     try {
-        const network = bitcoin.networks.testnet;
 
         // Create a new PSBT instance
-        const psbt = new Psbt({ network });
+        const psbt = new bitcoin.Psbt({ network });
 
         // Add the input from the previous transaction
         psbt.addInput({
-            hash: utxoTxid,
-            index: utxoOutputIndex,
-            witnessUtxo: {
-                script: Buffer.from(previousRedeemScriptHex, 'hex'),
-                value: utxoAmount,
-            },
-            redeemScript: Buffer.from(previousRedeemScriptHex, 'hex')
+            hash: newUtxoTxid,
+            index: 0,
+            nonWitnessUtxo: Buffer.from(lockingScript, 'hex')
         });
 
         // Add the new output
         psbt.addOutput({
-            address: outputAddress,
-            value: amountToSend,
+            address: newOutputAddress,
+            value: 20000,
         });
 
         // Sign the input with the private key
-        const privateKey = bitcoin.ECPair.fromPrivateKey(Buffer.from(privateKeyHex, 'hex'));
-        psbt.signInput(0, privateKey);
+       // const privateKey = bitcoin.ECPair.fromPrivateKey(Buffer.from(privateKeyHex, 'hex'));
+        psbt.signInput(0,keyPair);
 
         // Finalize the PSBT
         psbt.finalizeAllInputs();
@@ -116,8 +111,11 @@ async function constructSpendingTransaction(outputAddress, amountToSend, private
         throw error
     }
 }
-
-constructSpendingTransaction(newOutputAddress, newOutputAmount, privateKeyHex, utxoTxid, utxoOutputIndex, utxoAmount)
+const newUtxoTxid ='d811d221291ed294d7b0803837d77c4a957ee1e1e8c8c01cd3b81427bd615ac2'
+const lockingScript = redeemScript.toString('hex')
+const unlockingScript = bitcoin.script.compile([Buffer.from(preimageString)])
+const newOutputAddress ='mhHsuHbXxnqSTRzZM8JaBbiqaFdeABdSLS'
+constructSpendingTransaction(newOutputAddress, newUtxoTxid, lockingScript, unlockingScript)
     .then((transactionHex) => {
         console.log('Constructed New Transaction Hex:', transactionHex)
         const exec = require('child_process').exec;
